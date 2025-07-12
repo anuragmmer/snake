@@ -140,7 +140,8 @@
             direction: {x: 0, y: 0},
             food: {x: 0, y: 0},
             score: 0,
-            gameRunning: false
+            gameRunning: false,
+            speed: 300
         };
 
         function initGame() {
@@ -162,6 +163,7 @@
             if (!gameState.gameRunning) {
                 gameState.gameRunning = true;
                 gameState.direction = {x: GRID_SIZE, y: 0};
+                gameState.speed = 300;
                 gameLoop();
             }
         }
@@ -213,12 +215,16 @@
                 gameState.score += 10;
                 updateScore();
                 generateFood();
+                
+                if (gameState.speed > 120) {
+                    gameState.speed -= 8;
+                }
             } else {
                 gameState.snake.pop();
             }
 
             draw();
-            setTimeout(gameLoop, 150);
+            setTimeout(gameLoop, gameState.speed);
         }
 
         function gameOver() {
@@ -231,12 +237,25 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = '#00ff00';
-            gameState.snake.forEach(segment => {
-                ctx.fillRect(segment.x, segment.y, GRID_SIZE - 2, GRID_SIZE - 2);
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#00ff00';
+            gameState.snake.forEach((segment, index) => {
+                if (index === 0) {
+                    ctx.fillStyle = '#00ffaa';
+                    ctx.shadowColor = '#00ffaa';
+                } else {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.shadowColor = '#00ff00';
+                }
+                ctx.fillRect(segment.x + 1, segment.y + 1, GRID_SIZE - 3, GRID_SIZE - 3);
             });
 
             ctx.fillStyle = '#ff0080';
-            ctx.fillRect(gameState.food.x, gameState.food.y, GRID_SIZE - 2, GRID_SIZE - 2);
+            ctx.shadowColor = '#ff0080';
+            ctx.shadowBlur = 8;
+            ctx.fillRect(gameState.food.x + 1, gameState.food.y + 1, GRID_SIZE - 3, GRID_SIZE - 3);
+            
+            ctx.shadowBlur = 0;
         }
 
         function changeDirection(newDirection) {
@@ -252,7 +271,7 @@
                 gameState.direction.x === -GRID_SIZE ? 'left' :
                 gameState.direction.y === GRID_SIZE ? 'down' : 'up';
 
-            if (opposites[newDirection] === currentDir) return;
+            if (opposites[newDirection] === currentDir && gameState.snake.length > 1) return;
 
             switch(newDirection) {
                 case 'up': gameState.direction = {x: 0, y: -GRID_SIZE}; break;
