@@ -110,21 +110,21 @@
 
         .controls {
             position: fixed;
-            bottom: 40px;
+            bottom: 5vh;
             left: 50%;
             transform: translateX(-50%);
             display: none;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            width: 240px;
-            height: 200px;
+            gap: min(3vw, 15px);
+            width: min(70vw, 300px);
+            height: min(30vh, 220px);
         }
 
         .control-btn {
             background: #2d4a2d;
             border: 3px solid #4a6b4a;
             color: #9ed99e;
-            font-size: 20px;
+            font-size: clamp(16px, 4vw, 24px);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -132,8 +132,8 @@
             user-select: none;
             touch-action: manipulation;
             font-weight: 700;
-            border-radius: 8px;
-            min-height: 60px;
+            border-radius: min(2vw, 12px);
+            min-height: max(8vh, 50px);
         }
 
         .control-btn:active {
