@@ -26,10 +26,11 @@
         }
 
         .score {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: 700;
             text-shadow: 0 0 10px #00ff00;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
         }
 
         canvas {
@@ -45,13 +46,14 @@
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.9);
             color: #ffff00;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
-            font-size: 28px;
+            font-size: 36px;
             font-weight: 700;
-            text-shadow: 0 0 15px #ffff00;
-            border: 2px solid #ffff00;
+            text-shadow: 0 0 20px #ffff00;
+            border: 3px solid #ffff00;
             display: none;
+            letter-spacing: 3px;
         }
 
         .game-over.show {
@@ -107,7 +109,7 @@
     
     <div class="game-over" id="gameOver">
         GAME OVER<br>
-        <div style="font-size: 16px; margin-top: 10px;">TAP TO RESTART</div>
+        <div style="font-size: 18px; margin-top: 15px; letter-spacing: 1px;">SPACE/ARROWS/WASD TO RESTART</div>
     </div>
 
     <div class="controls">
@@ -146,14 +148,22 @@
             const centerY = Math.floor(canvas.height / 2 / GRID_SIZE) * GRID_SIZE;
             
             gameState.snake = [{x: centerX, y: centerY}];
-            gameState.direction = {x: GRID_SIZE, y: 0};
+            gameState.direction = {x: 0, y: 0};
             gameState.score = 0;
-            gameState.gameRunning = true;
+            gameState.gameRunning = false;
             
             generateFood();
             updateScore();
             gameOverElement.classList.remove('show');
-            gameLoop();
+            draw();
+        }
+
+        function startGame() {
+            if (!gameState.gameRunning) {
+                gameState.gameRunning = true;
+                gameState.direction = {x: GRID_SIZE, y: 0};
+                gameLoop();
+            }
         }
 
         function generateFood() {
@@ -253,24 +263,50 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (!gameState.gameRunning && e.code === 'Space') {
-                initGame();
+            if (!gameState.gameRunning && (e.code === 'Space' || 
+                e.code === 'ArrowUp' || e.code === 'ArrowDown' || 
+                e.code === 'ArrowLeft' || e.code === 'ArrowRight' ||
+                e.code === 'KeyW' || e.code === 'KeyS' || 
+                e.code === 'KeyA' || e.code === 'KeyD')) {
+                if (gameState.snake.length === 0) {
+                    initGame();
+                }
+                startGame();
                 e.preventDefault();
                 return;
             }
 
             switch(e.code) {
-                case 'ArrowUp': changeDirection('up'); e.preventDefault(); break;
-                case 'ArrowDown': changeDirection('down'); e.preventDefault(); break;
-                case 'ArrowLeft': changeDirection('left'); e.preventDefault(); break;
-                case 'ArrowRight': changeDirection('right'); e.preventDefault(); break;
+                case 'ArrowUp':
+                case 'KeyW':
+                    changeDirection('up');
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    changeDirection('down');
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                    changeDirection('left');
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    changeDirection('right');
+                    e.preventDefault();
+                    break;
             }
         });
 
         document.querySelectorAll('.control-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (!gameState.gameRunning) {
-                    initGame();
+                    if (gameState.snake.length === 0) {
+                        initGame();
+                    }
+                    startGame();
                 } else {
                     changeDirection(btn.dataset.direction);
                 }
@@ -288,7 +324,10 @@
 
         canvas.addEventListener('touchend', (e) => {
             if (!gameState.gameRunning) {
-                initGame();
+                if (gameState.snake.length === 0) {
+                    initGame();
+                }
+                startGame();
                 return;
             }
 
@@ -308,11 +347,17 @@
 
         canvas.addEventListener('click', () => {
             if (!gameState.gameRunning) {
-                initGame();
+                if (gameState.snake.length === 0) {
+                    initGame();
+                }
+                startGame();
             }
         });
 
-        gameOverElement.addEventListener('click', initGame);
+        gameOverElement.addEventListener('click', () => {
+            initGame();
+            startGame();
+        });
 
         initGame();
     </script>
