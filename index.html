@@ -76,6 +76,7 @@
             border: 3px solid #4a6b4a;
             display: none;
             animation: blinkGameOver 0.5s ease-in-out;
+            z-index: 1000;
         }
 
         .game-over.show {
@@ -115,8 +116,8 @@
             display: none;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
-            width: 180px;
-            height: 180px;
+            width: 80vw;
+            height: 40vh;
         }
 
         .control-btn {
@@ -241,7 +242,9 @@
             food: {x: 0, y: 0},
             score: 0,
             gameRunning: false,
-            speed: 250
+            speed: 250,
+            isBlinking: false,
+            blinkCount: 0
         };
 
         function initGame() {
@@ -253,27 +256,66 @@
             gameState.score = 0;
             gameState.gameRunning = false;
             gameState.speed = 250;
+            gameState.isBlinking = false;
+            gameState.blinkCount = 0;
             
             generateFood();
             updateScore();
-            gameOverElement.classList.remove('show');
+            gameOverElement.classList.remove('show', 'hide');
             draw();
         }
 
         function startGame() {
-            if (!gameState.gameRunning) {
-                const gameOverEl = document.getElementById('gameOver');
-                if (gameOverEl.classList.contains('show')) {
-                    gameOverEl.classList.add('hide');
-                    setTimeout(() => {
-                        gameOverEl.classList.remove('show', 'hide');
-                    }, 300);
-                }
-                
+            if (!gameState.gameRunning && !gameState.isBlinking) {
                 gameState.gameRunning = true;
                 gameState.direction = {x: GRID_SIZE, y: 0};
+                gameState.isBlinking = true;
+                gameState.blinkCount = 0;
+                blinkAndStart();
+            }
+        }
+
+        function restartGame() {
+            gameState.gameRunning = false;
+            gameState.isBlinking = false;
+            gameState.blinkCount = 0;
+            
+            const gameOverEl = document.getElementById('gameOver');
+            if (gameOverEl.classList.contains('show')) {
+                gameOverEl.classList.add('hide');
+                setTimeout(() => {
+                    gameOverEl.classList.remove('show', 'hide');
+                    initGame();
+                }, 300);
+            } else {
+                initGame();
+            }
+        }
+
+        function blinkAndStart() {
+            if (gameState.blinkCount < 6) {
+                draw();
+                setTimeout(() => {
+                    if (gameState.blinkCount % 2 === 0) {
+                        drawWithoutSnake();
+                    } else {
+                        draw();
+                    }
+                    gameState.blinkCount++;
+                    setTimeout(blinkAndStart, 200);
+                }, 200);
+            } else {
+                gameState.isBlinking = false;
                 gameLoop();
             }
+        }
+
+        function drawWithoutSnake() {
+            ctx.fillStyle = '#9ed99e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#1a2f1a';
+            ctx.fillRect(gameState.food.x, gameState.food.y, GRID_SIZE, GRID_SIZE);
         }
 
         function generateFood() {
@@ -384,51 +426,56 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (!gameState.gameRunning && (e.code === 'Space' || 
-                e.code === 'ArrowUp' || e.code === 'ArrowDown' || 
+            if (!gameState.gameRunning && !gameState.isBlinking && 
+                (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown' || 
                 e.code === 'ArrowLeft' || e.code === 'ArrowRight' ||
                 e.code === 'KeyW' || e.code === 'KeyS' || 
                 e.code === 'KeyA' || e.code === 'KeyD')) {
-                if (gameState.snake.length === 0) {
-                    initGame();
+                
+                if (gameOverElement.classList.contains('show')) {
+                    restartGame();
+                } else {
+                    startGame();
                 }
-                startGame();
                 e.preventDefault();
                 return;
             }
 
-            switch(e.code) {
-                case 'ArrowUp':
-                case 'KeyW':
-                    changeDirection('up');
-                    e.preventDefault();
-                    break;
-                case 'ArrowDown':
-                case 'KeyS':
-                    changeDirection('down');
-                    e.preventDefault();
-                    break;
-                case 'ArrowLeft':
-                case 'KeyA':
-                    changeDirection('left');
-                    e.preventDefault();
-                    break;
-                case 'ArrowRight':
-                case 'KeyD':
-                    changeDirection('right');
-                    e.preventDefault();
-                    break;
+            if (gameState.gameRunning && !gameState.isBlinking) {
+                switch(e.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        changeDirection('up');
+                        e.preventDefault();
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        changeDirection('down');
+                        e.preventDefault();
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        changeDirection('left');
+                        e.preventDefault();
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        changeDirection('right');
+                        e.preventDefault();
+                        break;
+                }
             }
         });
 
         document.querySelectorAll('.control-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!gameState.gameRunning) {
-                    if (gameState.snake.length === 0) {
-                        initGame();
+                if (!gameState.gameRunning && !gameState.isBlinking) {
+                    if (gameOverElement.classList.contains('show')) {
+                        restartGame();
+                    } else {
+                        startGame();
                     }
-                    startGame();
-                } else {
+                } else if (gameState.gameRunning && !gameState.isBlinking) {
                     changeDirection(btn.dataset.direction);
                 }
             });
@@ -444,40 +491,43 @@
         });
 
         canvas.addEventListener('touchend', (e) => {
-            if (!gameState.gameRunning) {
-                if (gameState.snake.length === 0) {
-                    initGame();
+            if (!gameState.gameRunning && !gameState.isBlinking) {
+                if (gameOverElement.classList.contains('show')) {
+                    restartGame();
+                } else {
+                    startGame();
                 }
-                startGame();
                 return;
             }
 
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
+            if (gameState.gameRunning && !gameState.isBlinking) {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
 
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
 
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                changeDirection(deltaX > 0 ? 'right' : 'left');
-            } else {
-                changeDirection(deltaY > 0 ? 'down' : 'up');
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    changeDirection(deltaX > 0 ? 'right' : 'left');
+                } else {
+                    changeDirection(deltaY > 0 ? 'down' : 'up');
+                }
             }
             e.preventDefault();
         });
 
         canvas.addEventListener('click', () => {
-            if (!gameState.gameRunning) {
-                if (gameState.snake.length === 0) {
-                    initGame();
+            if (!gameState.gameRunning && !gameState.isBlinking) {
+                if (gameOverElement.classList.contains('show')) {
+                    restartGame();
+                } else {
+                    startGame();
                 }
-                startGame();
             }
         });
 
         gameOverElement.addEventListener('click', () => {
-            initGame();
-            startGame();
+            restartGame();
         });
 
         initGame();
