@@ -293,8 +293,12 @@
             ctx.fillStyle = '#9ed99e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#1a2f1a';
-            gameState.snake.forEach(segment => {
+            gameState.snake.forEach((segment, index) => {
+                if (index === 0) {
+                    ctx.fillStyle = '#1a2f1a';
+                } else {
+                    ctx.fillStyle = '#4a6b4a';
+                }
                 ctx.fillRect(segment.x, segment.y, GRID_SIZE, GRID_SIZE);
             });
 
